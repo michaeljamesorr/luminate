@@ -1,29 +1,37 @@
 #!/usr/bin/env python3
 
 import pyglet
+from pyglet import gl
 import random
 
 class MainApp(pyglet.window.Window):
 
-	displayFPS = True
+	_displayFPS = True
+	_numPoints = 5000
 
 	def __init__(self, width, height):
 		pyglet.window.Window.__init__(self, width=width, height=height)
-		self.numPoints = 5000
-		random.seed(0)
 
-		if self.displayFPS:
+		if self._displayFPS:
 			self.fps_display = pyglet.window.FPSDisplay(self)
 
 	def on_draw(self):
 		self.clear()
-		if self.displayFPS:
-			self.fps_display.draw()
 
-		points = random_points(self.numPoints, self.width, self.height)
-		colours = random_colours(self.numPoints)
-		pyglet.graphics.draw(self.numPoints, pyglet.gl.GL_POINTS,
+		if self._displayFPS:
+			self.fps_display.draw()
+			
+		gl.glPushMatrix()
+		gl.glMatrixMode(gl.GL_MODELVIEW)
+		gl.glLoadIdentity()
+		gl.glTranslatef(100.0, 100.0, 0)
+
+		points = random_points(self._numPoints, self.width, self.height)
+		colours = random_colours(self._numPoints)
+		pyglet.graphics.draw(self._numPoints, gl.GL_POINTS,
 		 ('v2i/stream', points), ('c3B/stream', colours))
+
+		gl.glPopMatrix()
 
 def random_points(count, xMax, yMax):
 	points = []
