@@ -3,39 +3,8 @@
 import pyglet
 from pyglet import gl
 import random
+from widget import *
 
-class AbstractWidget:
-
-
-	_numPoints = 5000
-
-	def __init__(self, window, x, y, width, height):
-		self._window = window
-		self.x = x
-		self.y = y
-		self.width = width
-		self.height = height
-
-	def draw(self):
-		gl.glPushMatrix()
-		gl.glMatrixMode(gl.GL_MODELVIEW)
-		gl.glLoadIdentity()
-		gl.glTranslatef(self.x, self.y, 0)
-
-		self._draw_impl()
-
-		gl.glPopMatrix()
-
-	def _draw_impl(self):
-		pass
-
-class NoiseWidget(AbstractWidget):
-
-	def _draw_impl(self):
-		points = random_points(self._numPoints, self.width, self.height)
-		colours = random_colours(self._numPoints)
-		pyglet.graphics.draw(self._numPoints, gl.GL_POINTS,
-		 ('v2i/stream', points), ('c3B/stream', colours))
 
 class MainApp(pyglet.window.Window):
 
@@ -46,6 +15,8 @@ class MainApp(pyglet.window.Window):
 
 		self.widgets = []
 		self.widgets.append(NoiseWidget(self, 100, 100, 100, 100))
+		self.widgets.append(NoiseWidget(self, 300, 300, 100, 100))
+		self.widgets.append(NoiseWidget(self, 500, 500, 200, 100))
 
 		if self._displayFPS:
 			self.fps_display = pyglet.window.FPSDisplay(self)
@@ -56,19 +27,13 @@ class MainApp(pyglet.window.Window):
 		if self._displayFPS:
 			self.fps_display.draw()
 
+		gl.glMatrixMode(gl.GL_MODELVIEW)
+		gl.glLoadIdentity()
+
 		for w in self.widgets:
+			gl.glPushMatrix()
 			w.draw()
-
-
-def random_points(count, xMax, yMax):
-	points = []
-	for _ in range(count):
-		points.append(random.randint(0, xMax))
-		points.append(random.randint(0, yMax))
-	return points
-
-def random_colours(count):
-	return bytearray(random.getrandbits(8) for _ in range(count*3))
+			gl.glPopMatrix()
 
 def update(dt):
 	pass
