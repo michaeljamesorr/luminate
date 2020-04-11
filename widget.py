@@ -1,6 +1,5 @@
 import pyglet
 from pyglet import gl
-
 import numpy as np
 
 import generator
@@ -75,17 +74,17 @@ class NoiseWidget(AbstractWidget):
 
 class HeatmapWidget(AbstractWidget):
 
-    data_width = 320
-    data_height = 180
-
-    def __init__(self, window, x, y, width, height, minCol, maxCol, data=None):
+    def __init__(self, window, x, y, width, height,
+                 min_col=(0.0, 1.0, 0.0), max_col=(1.0, 0.0, 0.0), data=None):
         super().__init__(window, x, y, width, height)
 
-        self._minCol = np.array(minCol)
-        self._maxCol = np.array(maxCol)
+        self._minCol = np.array(min_col)
+        self._maxCol = np.array(max_col)
 
         if data is None:
-            data = np.random.rand(self.data_width, self.data_height)
+            data = np.ones((2, 2))
+
+        self.data_width, self.data_height = data.shape
 
         self._update_data(data)
 
@@ -93,6 +92,11 @@ class HeatmapWidget(AbstractWidget):
         self._data = data
         min_point = np.amin(self._data)
         max_point = np.amax(self._data)
+
+        # If every data point is the same, normalise to 0.5
+        if max_point == min_point:
+            min_point = 0
+            max_point *= 2
 
         normed_data = (self._data - min_point) / (max_point - min_point)
 
@@ -103,8 +107,9 @@ class HeatmapWidget(AbstractWidget):
                                             np.ravel((a + b), order="F"))
 
     def update(self, dt):
-        data = np.random.rand(self.data_width, self.data_height)
-        self._update_data(data)
+        # data = np.random.rand(self.data_width, self.data_height)
+        # self._update_data(data)
+        pass
 
     def _draw_impl(self):
 

@@ -18,7 +18,8 @@ class MainApp(pyglet.window.Window):
         # self.widgets.append(widget.NoiseWidget(self, 500, 500, 200, 100))
 
         self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
-                                                 (0.0, 0.0, 0.8), (0.0, 0.8, 0.0)))
+                                                 # (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
+                                                 data=None))
 
         if self._displayFPS:
             self.fps_display = pyglet.window.FPSDisplay(self)
