@@ -1,8 +1,6 @@
 import pyglet
 from pyglet import gl
 
-import ctypes as ct
-
 import numpy as np
 
 import generator
@@ -73,9 +71,9 @@ class HeatmapWidget(AbstractWidget):
         dataVector = np.ravel(normed_data)
         a = np.outer(self._minCol, (1 - dataVector))
         b = np.outer(self._maxCol, dataVector)
-        self._tex = np.ravel((a + b).astype(ct.c_ubyte), order="F").tolist()
+        self._tex = np.ravel((a + b), order="F")
 
-        self._tex = (gl.GLubyte * len(self._tex))(*self._tex)
+        self._tex = (gl.GLfloat * len(self._tex))(*self._tex)
 
         self._tex_id = gl.GLuint()
 
@@ -86,7 +84,7 @@ class HeatmapWidget(AbstractWidget):
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
         gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, self.data_width, self.data_height,
-                        0, gl.GL_RGB, gl.GL_UNSIGNED_BYTE, self._tex)
+                        0, gl.GL_RGB, gl.GL_FLOAT, self._tex)
 
     def _draw_impl(self):
 
