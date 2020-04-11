@@ -3,6 +3,7 @@ from pyglet import gl
 import numpy as np
 
 import generator
+import datasource as ds
 
 
 class AbstractWidget:
@@ -62,8 +63,8 @@ class NoiseWidget(AbstractWidget):
 
     def update(self, dt):
         self._points = generator.random_points(self._numPoints,
-                                               self.width, self.height)
-        self._colours = generator.random_colours(self._numPoints)
+                                               self.width, self.height).tolist()
+        self._colours = generator.random_colours(self._numPoints).tolist()
 
     def _draw_impl(self):
 
@@ -75,20 +76,23 @@ class NoiseWidget(AbstractWidget):
 class HeatmapWidget(AbstractWidget):
 
     def __init__(self, window, x, y, width, height,
-                 min_col=(0.0, 1.0, 0.0), max_col=(1.0, 0.0, 0.0), data=None):
+                 min_col=(0.0, 1.0, 0.0), max_col=(1.0, 0.0, 0.0),
+                 data_source=None):
         super().__init__(window, x, y, width, height)
 
         self._minCol = np.array(min_col)
         self._maxCol = np.array(max_col)
 
-        if data is None:
-            data = np.ones((2, 2))
+        if data_source is None:
+            data_source = ds.ConstantDataSource(np.ones((2, 2)))
 
+        self.data_source = data_source
+
+        data = data_source.get_data()
         self.data_width, self.data_height = data.shape
+        self._update_texture(data)
 
-        self._update_data(data)
-
-    def _update_data(self, data):
+    def _update_texture(self, data):
         self._data = data
         min_point = np.amin(self._data)
         max_point = np.amax(self._data)
@@ -107,8 +111,9 @@ class HeatmapWidget(AbstractWidget):
                                             np.ravel((a + b), order="F"))
 
     def update(self, dt):
-        # data = np.random.rand(self.data_width, self.data_height)
-        # self._update_data(data)
+        self.data_source.update(dt)
+        data = self.data_source.get_data()
+        self._update_texture(data)
         pass
 
     def _draw_impl(self):

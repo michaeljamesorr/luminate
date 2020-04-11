@@ -1,13 +1,11 @@
-import random
+import numpy as np
 
 
-def random_points(count, xMax, yMax):
-    points = []
-    for _ in range(count):
-        points.append(random.randint(0, xMax))
-        points.append(random.randint(0, yMax))
-    return points
+def random_points(count, x_max, y_max):
+    x_points = np.random.randint(0, x_max, (count))
+    y_points = np.random.randint(0, y_max, (count))
+    return np.ravel(np.stack((x_points, y_points)), order="F")
 
 
 def random_colours(count):
-    return bytearray(random.getrandbits(8) for _ in range(count*3))
+    return np.random.bytes(count*3)

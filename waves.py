@@ -2,7 +2,9 @@
 
 import pyglet
 from pyglet import gl
+
 import widget
+import datasource as ds
 
 
 class MainApp(pyglet.window.Window):
@@ -19,7 +21,7 @@ class MainApp(pyglet.window.Window):
 
         self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
                                                  # (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
-                                                 data=None))
+                                                 data_source=ds.RandomDataSource((320, 180))))
 
         if self._displayFPS:
             self.fps_display = pyglet.window.FPSDisplay(self)
