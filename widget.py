@@ -77,12 +77,10 @@ class HeatmapWidget(AbstractWidget):
 
         self._tex_id = gl.GLuint()
 
-        # gl.glActiveTexture(gl.GL_TEXTURE1)
-        gl.glEnable(gl.GL_TEXTURE_2D)
         gl.glBindTexture(gl.GL_TEXTURE_2D, self._tex_id)
         gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
-        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
-        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
         gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, self.data_width, self.data_height,
                         0, gl.GL_RGB, gl.GL_FLOAT, self._tex)
 
@@ -91,7 +89,6 @@ class HeatmapWidget(AbstractWidget):
         data = np.random.rand(self.data_width, self.data_height)
         self.update_data(data)
 
-        gl.glEnable(gl.GL_TEXTURE_2D)
         gl.glBindTexture(gl.GL_TEXTURE_2D, self._tex_id)
         gl.glBegin(gl.GL_QUADS)
         gl.glTexCoord2i(0, 0)

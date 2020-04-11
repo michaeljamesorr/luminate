@@ -23,6 +23,8 @@ class MainApp(pyglet.window.Window):
         if self._displayFPS:
             self.fps_display = pyglet.window.FPSDisplay(self)
 
+        gl.glEnable(gl.GL_TEXTURE_2D)
+
     def on_draw(self):
         self.clear()
 
