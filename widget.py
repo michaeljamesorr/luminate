@@ -28,6 +28,33 @@ class AbstractWidget:
     def _draw_impl(self):
         pass
 
+    def _create_texture(self, width, height, tex_array):
+        tex = (gl.GLfloat * len(tex_array))(*tex_array)
+
+        tex_id = gl.GLuint()
+
+        gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+        gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, width, height,
+                        0, gl.GL_RGB, gl.GL_FLOAT, tex)
+
+        return tex_id
+
+    def _draw_texture(self, tex_id, x, y, width, height):
+        gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+        gl.glBegin(gl.GL_QUADS)
+        gl.glTexCoord2i(0, 0)
+        gl.glVertex2i(x, y)
+        gl.glTexCoord2i(1, 0)
+        gl.glVertex2i(width, y)
+        gl.glTexCoord2i(1, 1)
+        gl.glVertex2i(width, height)
+        gl.glTexCoord2i(0, 1)
+        gl.glVertex2i(x, height)
+        gl.glEnd()
+
 
 class NoiseWidget(AbstractWidget):
 
@@ -55,14 +82,10 @@ class HeatmapWidget(AbstractWidget):
         if data is None:
             data = np.random.rand(self.data_width, self.data_height)
 
-        self._data = data
-        self._generate_texture()
+        self.update_data(data)
 
     def update_data(self, data):
         self._data = data
-        self._generate_texture()
-
-    def _generate_texture(self):
         min_point = np.amin(self._data)
         max_point = np.amax(self._data)
 
@@ -71,35 +94,15 @@ class HeatmapWidget(AbstractWidget):
         dataVector = np.ravel(normed_data)
         a = np.outer(self._minCol, (1 - dataVector))
         b = np.outer(self._maxCol, dataVector)
-        self._tex = np.ravel((a + b), order="F")
-
-        self._tex = (gl.GLfloat * len(self._tex))(*self._tex)
-
-        self._tex_id = gl.GLuint()
-
-        gl.glBindTexture(gl.GL_TEXTURE_2D, self._tex_id)
-        gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
-        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
-        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
-        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, self.data_width, self.data_height,
-                        0, gl.GL_RGB, gl.GL_FLOAT, self._tex)
+        self._tex_id = self._create_texture(self.data_width, self.data_height,
+                                            np.ravel((a + b), order="F"))
 
     def _draw_impl(self):
 
         data = np.random.rand(self.data_width, self.data_height)
         self.update_data(data)
 
-        gl.glBindTexture(gl.GL_TEXTURE_2D, self._tex_id)
-        gl.glBegin(gl.GL_QUADS)
-        gl.glTexCoord2i(0, 0)
-        gl.glVertex2i(0, 0)
-        gl.glTexCoord2i(1, 0)
-        gl.glVertex2i(self.width, 0)
-        gl.glTexCoord2i(1, 1)
-        gl.glVertex2i(self.width, self.height)
-        gl.glTexCoord2i(0, 1)
-        gl.glVertex2i(0, self.height)
-        gl.glEnd()
+        self._draw_texture(self._tex_id, 0, 0, self.width, self.height)
 
 
 def test():
