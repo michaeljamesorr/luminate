@@ -13,20 +13,17 @@ class MainApp(pyglet.window.Window):
         pyglet.window.Window.__init__(self, width=width, height=height)
 
         self.widgets = []
-        self.widgets.append(widget.NoiseWidget(self, 100, 100, 100, 100))
-        self.widgets.append(widget.NoiseWidget(self, 300, 300, 100, 100))
-        self.widgets.append(widget.NoiseWidget(self, 500, 500, 200, 100))
+        # self.widgets.append(widget.NoiseWidget(self, 100, 100, 100, 100))
+        # self.widgets.append(widget.NoiseWidget(self, 300, 300, 100, 100))
+        # self.widgets.append(widget.NoiseWidget(self, 500, 500, 200, 100))
 
-        self.widgets.append(widget.HeatmapWidget(self, 100, 500, 400, 400, (64, 127, 64), (200, 64, 100)))
+        self.widgets.append(widget.HeatmapWidget(self, 0, 0, 1280, 720, (0, 0, 200), (0, 200, 0)))
 
         if self._displayFPS:
             self.fps_display = pyglet.window.FPSDisplay(self)
 
     def on_draw(self):
         self.clear()
-
-        if self._displayFPS:
-            self.fps_display.draw()
 
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
@@ -36,6 +33,9 @@ class MainApp(pyglet.window.Window):
             w.draw()
             gl.glPopMatrix()
 
+        if self._displayFPS:
+            self.fps_display.draw()
+
 
 def update(dt):
     pass
@@ -43,7 +43,7 @@ def update(dt):
 
 def main():
     MainApp(width=1280, height=720)
-    pyglet.clock.schedule_interval(update, 0.01)
+    pyglet.clock.schedule_interval(update, 0.001)
     pyglet.app.run()
 
 

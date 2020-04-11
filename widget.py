@@ -1,6 +1,8 @@
 import pyglet
 from pyglet import gl
 
+import ctypes as ct
+
 import numpy as np
 
 import generator
@@ -43,6 +45,9 @@ class NoiseWidget(AbstractWidget):
 
 class HeatmapWidget(AbstractWidget):
 
+    data_width = 320
+    data_height = 180
+
     def __init__(self, window, x, y, width, height, minCol, maxCol, data=None):
         super().__init__(window, x, y, width, height)
 
@@ -50,13 +55,7 @@ class HeatmapWidget(AbstractWidget):
         self._maxCol = np.array(maxCol)
 
         if data is None:
-            data = np.array([[np.random.random() for _ in range(height)] for _ in range(width)])
-
-        self._points = []
-        for x in range(self.width):
-            for y in range(self.height):
-                self._points.append(x)
-                self._points.append(y)
+            data = np.random.rand(self.data_width, self.data_height)
 
         self._data = data
         self._generate_texture()
@@ -69,52 +68,49 @@ class HeatmapWidget(AbstractWidget):
         min_point = np.amin(self._data)
         max_point = np.amax(self._data)
 
-        normedData = (self._data - min_point) / (max_point - min_point)
+        normed_data = (self._data - min_point) / (max_point - min_point)
 
-        self._tex = [[0 for _ in range(self.height)] for _ in range(self.width)]
+        dataVector = np.ravel(normed_data)
+        a = np.outer(self._minCol, (1 - dataVector))
+        b = np.outer(self._maxCol, dataVector)
+        self._tex = np.ravel((a + b).astype(ct.c_ubyte), order="F").tolist()
 
-        for x in range(self.width):
-            for y in range(self.height):
-                dataPoint = normedData[x][y]
-                self._tex[x][y] = tuple((self._minCol * (1 - dataPoint) + self._maxCol * dataPoint).astype(int))
+        self._tex = (gl.GLubyte * len(self._tex))(*self._tex)
 
-        colours = []
-        for x in range(self.width):
-            for y in range(self.height):
-                colours.extend(self._tex[x][y])
+        self._tex_id = gl.GLuint()
 
-        self._vertex_list = pyglet.graphics.vertex_list(self.width * self.height,
-                                                        ('v2i', self._points),
-                                                        ('c3B', colours))
+        # gl.glActiveTexture(gl.GL_TEXTURE1)
+        gl.glEnable(gl.GL_TEXTURE_2D)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self._tex_id)
+        gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, self.data_width, self.data_height,
+                        0, gl.GL_RGB, gl.GL_UNSIGNED_BYTE, self._tex)
 
     def _draw_impl(self):
 
-        data = np.array([[np.random.random() for _ in range(self.height)] for _ in range(self.width)])
+        data = np.random.rand(self.data_width, self.data_height)
         self.update_data(data)
-        self._vertex_list.draw(gl.GL_POINTS)
+
+        gl.glEnable(gl.GL_TEXTURE_2D)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self._tex_id)
+        gl.glBegin(gl.GL_QUADS)
+        gl.glTexCoord2i(0, 0)
+        gl.glVertex2i(0, 0)
+        gl.glTexCoord2i(1, 0)
+        gl.glVertex2i(self.width, 0)
+        gl.glTexCoord2i(1, 1)
+        gl.glVertex2i(self.width, self.height)
+        gl.glTexCoord2i(0, 1)
+        gl.glVertex2i(0, self.height)
+        gl.glEnd()
 
 
 def test():
-    width = 400
-    height = 400
+    pass
 
-    min_col = (64, 127, 64)
-    max_col = (200, 64, 100)
 
-    data = np.array([[np.random.random() for _ in range(height)]for _ in range(width)])
-    min_point = np.amin(data)
-    max_point = np.amax(data)
-
-    normed_data = (data - min_point) / (max_point - min_point)
-
-    _tex = [[0 for _ in range(height)] for _ in range(width)]
-
-    for x in range(width):
-        for y in range(height):
-            data_point = normed_data[x][y]
-            _tex[x][y] = tuple((min_col * (1 - data_point) + max_col * data_point).astype(int))
-
-    colours = []
-    for x in range(width):
-        for y in range(height):
-            colours.extend(_tex[x][y])
+if __name__ == '__main__':
+    import timeit
+    print(1/(timeit.timeit("test()", setup="from __main__ import test", number=10)/10))
