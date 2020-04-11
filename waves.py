@@ -39,14 +39,14 @@ class MainApp(pyglet.window.Window):
         if self._displayFPS:
             self.fps_display.draw()
 
-
-def update(dt):
-    pass
+    def update(self, dt):
+        for w in self.widgets:
+            w.update(dt)
 
 
 def main():
-    MainApp(width=1280, height=720)
-    pyglet.clock.schedule_interval(update, 0.001)
+    window = MainApp(width=1280, height=720)
+    pyglet.clock.schedule_interval(window.update, 0.001)
     pyglet.app.run()
 
 

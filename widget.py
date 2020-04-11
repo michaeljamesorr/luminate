@@ -28,6 +28,9 @@ class AbstractWidget:
     def _draw_impl(self):
         pass
 
+    def update(self, dt):
+        pass
+
     def _create_texture(self, width, height, tex_array):
         tex = (gl.GLfloat * len(tex_array))(*tex_array)
 
@@ -58,14 +61,16 @@ class AbstractWidget:
 
 class NoiseWidget(AbstractWidget):
 
+    def update(self, dt):
+        self._points = generator.random_points(self._numPoints,
+                                               self.width, self.height)
+        self._colours = generator.random_colours(self._numPoints)
+
     def _draw_impl(self):
-        points = generator.random_points(self._numPoints,
-                                         self.width, self.height)
-        colours = generator.random_colours(self._numPoints)
 
         pyglet.graphics.draw(self._numPoints, gl.GL_POINTS,
-                             ('v2i/stream', points),
-                             ('c3B/stream', colours))
+                             ('v2i/stream', self._points),
+                             ('c3B/stream', self._colours))
 
 
 class HeatmapWidget(AbstractWidget):
@@ -82,9 +87,9 @@ class HeatmapWidget(AbstractWidget):
         if data is None:
             data = np.random.rand(self.data_width, self.data_height)
 
-        self.update_data(data)
+        self._update_data(data)
 
-    def update_data(self, data):
+    def _update_data(self, data):
         self._data = data
         min_point = np.amin(self._data)
         max_point = np.amax(self._data)
@@ -97,10 +102,11 @@ class HeatmapWidget(AbstractWidget):
         self._tex_id = self._create_texture(self.data_width, self.data_height,
                                             np.ravel((a + b), order="F"))
 
-    def _draw_impl(self):
-
+    def update(self, dt):
         data = np.random.rand(self.data_width, self.data_height)
-        self.update_data(data)
+        self._update_data(data)
+
+    def _draw_impl(self):
 
         self._draw_texture(self._tex_id, 0, 0, self.width, self.height)
 
