@@ -3,7 +3,7 @@
 import pyglet
 from pyglet import gl
 import random
-from widget import *
+import widget
 
 
 class MainApp(pyglet.window.Window):
@@ -14,9 +14,11 @@ class MainApp(pyglet.window.Window):
 		pyglet.window.Window.__init__(self, width=width, height=height)
 
 		self.widgets = []
-		self.widgets.append(NoiseWidget(self, 100, 100, 100, 100))
-		self.widgets.append(NoiseWidget(self, 300, 300, 100, 100))
-		self.widgets.append(NoiseWidget(self, 500, 500, 200, 100))
+		self.widgets.append(widget.NoiseWidget(self, 100, 100, 100, 100))
+		self.widgets.append(widget.NoiseWidget(self, 300, 300, 100, 100))
+		self.widgets.append(widget.NoiseWidget(self, 500, 500, 200, 100))
+
+		self.widgets.append(widget.HeatmapWidget(self, 100, 500, 400, 400, (64, 127, 64), (200, 64, 100)))
 
 		if self._displayFPS:
 			self.fps_display = pyglet.window.FPSDisplay(self)
