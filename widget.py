@@ -62,8 +62,9 @@ class AbstractWidget:
 class NoiseWidget(AbstractWidget):
 
     def update(self, dt):
-        self._points = generator.random_points(self._numPoints,
-                                               self.width, self.height).tolist()
+        points = generator.random_points(self._numPoints,
+                                         self.width, self.height).tolist()
+        self._points = np.ravel(points, order="F").tolist()
         self._colours = generator.random_colours(self._numPoints).tolist()
 
     def _draw_impl(self):
