@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 import numpy as np
 import struct
 
@@ -38,6 +39,56 @@ class RandomDataSource(AbstractDataSource):
         return np.random.sample(self._data_shape)
 
 
+class FunctionDataSource(AbstractDataSource):
+
+    def __init__(self, function, var_names, var_ranges, dynamic_var=None, dynamic_var_start=0):
+        self._function = function
+        self._var_names = var_names
+        self._var_ranges = var_ranges
+        self._dynamic_var = dynamic_var
+        self._dynamic_var_val = dynamic_var_start
+        self._sample_point_matrix = self._construct_matrix(var_ranges)
+
+    def _construct_matrix(self, ranges):
+        shape = []
+        for var_range in ranges:
+            shape.append(len(var_range))
+        matrix = np.empty(shape, object)
+
+        for idx, val in np.ndenumerate(matrix):
+            point = []
+            for pos, var_range in enumerate(ranges):
+                point.append(var_range[idx[pos]])
+            matrix[idx] = point
+
+        return matrix
+
+    def update(self, dt):
+        if self._dynamic_var:
+            self._dynamic_var_val += dt
+
+    def get_data(self):
+        data_matrix = np.zeros(self._sample_point_matrix.shape)
+
+        for idx, sample_point in np.ndenumerate(self._sample_point_matrix):
+            kwargs = {}
+            for pos, name in enumerate(self._var_names):
+                kwargs[name] = sample_point[pos]
+            data_matrix[idx] = self._function(**kwargs)
+
+        return data_matrix
+
+
 def floatToBits(f):
     s = struct.pack('>f', f)
     return struct.unpack('>l', s)[0]
+
+
+def main():
+    f_source = FunctionDataSource(lambda x: (math.sin(x)),
+                                  ("x"), [np.linspace(-math.pi, math.pi, 20)])
+    print(f_source.get_data())
+
+
+if __name__ == '__main__':
+    main()
