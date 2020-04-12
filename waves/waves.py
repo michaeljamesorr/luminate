@@ -28,8 +28,17 @@ class MainApp(pyglet.window.Window):
 
         func_source = ds.FunctionDataSource(lambda x, t: (math.sin(x-20*t)),
                                             ("x"), [np.linspace(-2*math.pi, 2*math.pi, 100)], dynamic_var="t")
-        self.widgets.append(widget.LinePlotWidget(self, 200, 200, 1000, 300,
+        self.widgets.append(widget.LinePlotWidget(self, 0, 0, 1280, 300,
                                                   data_source=func_source))
+
+        func_source = ds.FunctionDataSource(lambda x, y, t: (math.sin(x-t) + math.sin(y-t)+math.sin(x*y)),
+                                            ("x", "y"),
+                                            [np.linspace(-2*math.pi, 2*math.pi, 100),
+                                             np.linspace(-2*math.pi, 2*math.pi, 100)],
+                                            dynamic_var="t")
+        self.widgets.append(widget.HeatmapWidget(self, 0, 300, 1280, 420,
+                                                 (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
+                                                 data_source=func_source))
 
         if self._displayFPS:
             self.fps_display = pyglet.window.FPSDisplay(self)
