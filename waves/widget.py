@@ -74,6 +74,45 @@ class NoiseWidget(AbstractWidget):
                              ('c3B/stream', self._colours))
 
 
+class LinePlotWidget(AbstractWidget):
+
+    def __init__(self, window, x, y, width, height,
+                 line_col=(1.0, 1.0, 1.0), data_source=None):
+        super().__init__(window, x, y, width, height)
+
+        self._line_col = line_col
+
+        if data_source is None:
+            data_source = ds.ConstantDataSource(np.ones(10))
+
+        border_points = (0, 0, 0, self.height, self.width, self.height, self.width, 0)
+        self._border = pyglet.graphics.vertex_list(4, ('v2i', border_points))
+
+        self._data_source = data_source
+        self._update_data()
+
+    def update(self, dt):
+        self._data_source.update(dt)
+        self._update_data()
+
+    def _update_data(self):
+        data = self._data_source.get_data()
+        normed_data = norm_data(data)
+        self._update_vertex_list(normed_data)
+
+    def _update_vertex_list(self, normed_data):
+        count = normed_data.size
+        y_points = (normed_data * self.height)
+        x_points = np.linspace(0, self.width, count)
+        points = np.stack((x_points, y_points))
+        points = np.ravel(points, order="F").tolist()
+        self._vertex_list = pyglet.graphics.vertex_list(count, ('v2f', points))
+
+    def _draw_impl(self):
+        self._border.draw(gl.GL_LINE_LOOP)
+        self._vertex_list.draw(gl.GL_LINE_STRIP)
+
+
 class HeatmapWidget(AbstractWidget):
 
     def __init__(self, window, x, y, width, height,
@@ -95,15 +134,8 @@ class HeatmapWidget(AbstractWidget):
 
     def _update_texture(self, data):
         self._data = data
-        min_point = np.amin(self._data)
-        max_point = np.amax(self._data)
 
-        # If every data point is the same, normalise to 0.5
-        if max_point == min_point:
-            min_point = 0
-            max_point *= 2
-
-        normed_data = (self._data - min_point) / (max_point - min_point)
+        normed_data = norm_data(data)
 
         dataVector = np.ravel(normed_data)
         a = np.outer(self._minCol, (1 - dataVector))
@@ -120,6 +152,19 @@ class HeatmapWidget(AbstractWidget):
     def _draw_impl(self):
 
         self._draw_texture(self._tex_id, 0, 0, self.width, self.height)
+
+
+def norm_data(data):
+    min_point = np.amin(data)
+    max_point = np.amax(data)
+
+    # If every data point is the same, normalise to 0.5
+    if max_point == min_point:
+        min_point = 0
+        max_point *= 2
+
+    normed_data = (data - min_point) / (max_point - min_point)
+    return normed_data
 
 
 def test():

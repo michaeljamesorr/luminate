@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import math
+
+import numpy as np
 import pyglet
 from pyglet import gl
 
@@ -19,9 +22,14 @@ class MainApp(pyglet.window.Window):
         # self.widgets.append(widget.NoiseWidget(self, 300, 300, 100, 100))
         # self.widgets.append(widget.NoiseWidget(self, 500, 500, 200, 100))
 
-        self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
-                                                 # (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
-                                                 data_source=ds.RandomDataSource((320, 180))))
+        # self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
+        #                                          # (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
+        #                                          data_source=ds.RandomDataSource((320, 180))))
+
+        func_source = ds.FunctionDataSource(lambda x, t: (math.sin(x-20*t)),
+                                            ("x"), [np.linspace(-2*math.pi, 2*math.pi, 100)], dynamic_var="t")
+        self.widgets.append(widget.LinePlotWidget(self, 200, 200, 1000, 300,
+                                                  data_source=func_source))
 
         if self._displayFPS:
             self.fps_display = pyglet.window.FPSDisplay(self)

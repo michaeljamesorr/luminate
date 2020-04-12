@@ -74,6 +74,8 @@ class FunctionDataSource(AbstractDataSource):
             kwargs = {}
             for pos, name in enumerate(self._var_names):
                 kwargs[name] = sample_point[pos]
+            if self._dynamic_var:
+                kwargs[self._dynamic_var] = self._dynamic_var_val
             data_matrix[idx] = self._function(**kwargs)
 
         return data_matrix
