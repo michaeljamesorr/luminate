@@ -86,6 +86,17 @@ def floatToBits(f):
     return struct.unpack('>l', s)[0]
 
 
+class AudioDataSource(FunctionDataSource):
+
+    def __init__(self, audio_signal, window_length):
+        self._audio_signal = audio_signal
+        raw_audio = audio_signal.get_array_of_samples()
+        num_samples = len(raw_audio)
+        super().__init__(lambda x, t: raw_audio[x + int(t*44000)] if 0 <= x + int(t*44000)
+                         and x + int(t*44000) < num_samples else 0, ("x"),
+                         [range(window_length)], dynamic_var="t")
+
+
 def main():
     f_source = FunctionDataSource(lambda x: (math.sin(x)),
                                   ("x"), [np.linspace(-math.pi, math.pi, 20)])
