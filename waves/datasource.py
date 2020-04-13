@@ -91,6 +91,7 @@ class AudioDataSource(FunctionDataSource):
     def __init__(self, audio_signal, window_length):
         self._audio_signal = audio_signal
         raw_audio = audio_signal.get_array_of_samples()
+        # raw_audio = sigfilter.smooth(raw_audio, 22)
         num_samples = len(raw_audio)
         super().__init__(lambda x, t: raw_audio[x + int(t*44000)] if 0 <= x + int(t*44000)
                          and x + int(t*44000) < num_samples else 0, ("x"),
