@@ -2,7 +2,7 @@ import pyglet
 from pyglet import gl
 import numpy as np
 
-import generator
+import utility
 import datasource as ds
 
 
@@ -62,10 +62,10 @@ class AbstractWidget:
 class NoiseWidget(AbstractWidget):
 
     def update(self, dt):
-        points = generator.random_points(self._numPoints,
-                                         self.width, self.height).tolist()
+        points = utility.random_points(self._numPoints,
+                                       self.width, self.height).tolist()
         self._points = np.ravel(points, order="F").tolist()
-        self._colours = generator.random_colours(self._numPoints).tolist()
+        self._colours = utility.random_colours(self._numPoints).tolist()
 
     def _draw_impl(self):
 
