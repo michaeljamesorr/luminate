@@ -6,7 +6,7 @@ from pyglet import gl
 import cv2
 
 import widget
-# import sigfilter
+import sigfilter
 
 
 class MainApp(pyglet.window.Window):
@@ -25,8 +25,13 @@ class MainApp(pyglet.window.Window):
         # tex_data[::30, :, :] = 1
         # tex_data[:, ::30, :] = 1
 
-        img = cv2.imread("data/DSC_0075.jpg")
+        img = cv2.imread("data/DSC_2489.jpg")
         tex_data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        tex_data = tex_data.astype(float)
+        tex_data = tex_data/256
+        tex_data = sigfilter.apply_filter(tex_data, sigfilter.GAUSS_BLUR_3)
+        tex_data = sigfilter.apply_filter(tex_data, sigfilter.EDGE_DETECT)
+
         self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, tex_data_2d=tex_data))
 
         # self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
