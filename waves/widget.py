@@ -31,8 +31,28 @@ class AbstractWidget:
     def update(self, dt):
         pass
 
-    def _create_texture(self, width, height, tex_array):
-        tex = (gl.GLfloat * len(tex_array))(*tex_array)
+
+class TextureWidget(AbstractWidget):
+
+    def __init__(self, window, x, y, width, height, tex_data_2d=None):
+        super().__init__(window, x, y, width, height)
+
+        if tex_data_2d is None:
+            tex_data_2d = np.zeros((width, height, 3))
+            mid_grey = np.array((0.5, 0.5, 0.5))
+            tex_data_2d[...] = mid_grey
+
+        self._tex_id = self._create_texture(tex_data_2d)
+
+    def _create_texture(self, tex_array_2d, shape=None):
+        if shape is None:
+            width, height = tex_array_2d.shape[:2]
+        else:
+            width, height = shape
+        tex_array_1d = np.ravel(tex_array_2d)
+        if (width*height*3 != len(tex_array_1d)):
+            raise ValueError("Shape does not match data!")
+        tex = (gl.GLfloat * len(tex_array_1d))(*tex_array_1d)
 
         tex_id = gl.GLuint()
 
@@ -57,6 +77,9 @@ class AbstractWidget:
         gl.glTexCoord2i(0, 1)
         gl.glVertex2i(x, height)
         gl.glEnd()
+
+    def _draw_impl(self):
+        self._draw_texture(self._tex_id, 0, 0, self.width, self.height)
 
 
 class NoiseWidget(AbstractWidget):
@@ -113,7 +136,7 @@ class LinePlotWidget(AbstractWidget):
         self._vertex_list.draw(gl.GL_LINE_STRIP)
 
 
-class HeatmapWidget(AbstractWidget):
+class HeatmapWidget(TextureWidget):
 
     def __init__(self, window, x, y, width, height,
                  min_col=(0.0, 1.0, 0.0), max_col=(1.0, 0.0, 0.0),
@@ -135,23 +158,20 @@ class HeatmapWidget(AbstractWidget):
     def _update_texture(self, data):
         self._data = data
 
+        shape = data.shape
         normed_data = norm_data(data)
 
         dataVector = np.ravel(normed_data)
         a = np.outer(self._minCol, (1 - dataVector))
         b = np.outer(self._maxCol, dataVector)
-        self._tex_id = self._create_texture(self.data_width, self.data_height,
-                                            np.ravel((a + b), order="F"))
+        tex_data_2d = np.ravel(a+b, order="F").reshape(shape[0], shape[1], 3)
+        self._tex_id = self._create_texture(tex_data_2d)
 
     def update(self, dt):
         self.data_source.update(dt)
         data = self.data_source.get_data()
         self._update_texture(data)
         pass
-
-    def _draw_impl(self):
-
-        self._draw_texture(self._tex_id, 0, 0, self.width, self.height)
 
 
 def norm_data(data):
