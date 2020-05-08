@@ -45,10 +45,18 @@ class TextureWidget(AbstractWidget):
         self._tex_id = self._create_texture(tex_data_2d)
 
     def _create_texture(self, tex_array_2d, shape=None):
+
+        print(tex_array_2d.dtype)
+        if tex_array_2d.dtype == np.dtype('uint8'):
+            tex_array_2d = tex_array_2d.astype(float)
+            tex_array_2d = tex_array_2d/256
+
         if shape is None:
-            width, height = tex_array_2d.shape[:2]
+            height, width = tex_array_2d.shape[:2]
         else:
-            width, height = shape
+            height, width = shape
+
+        print((width, height))
         tex_array_1d = np.ravel(tex_array_2d)
         if (width*height*3 != len(tex_array_1d)):
             raise ValueError("Shape does not match data!")
@@ -58,8 +66,8 @@ class TextureWidget(AbstractWidget):
 
         gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
         gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
-        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
-        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
         gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, width, height,
                         0, gl.GL_RGB, gl.GL_FLOAT, tex)
 
@@ -69,13 +77,13 @@ class TextureWidget(AbstractWidget):
         gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
         gl.glBegin(gl.GL_QUADS)
         gl.glTexCoord2i(0, 0)
-        gl.glVertex2i(x, y)
-        gl.glTexCoord2i(1, 0)
-        gl.glVertex2i(width, y)
-        gl.glTexCoord2i(1, 1)
-        gl.glVertex2i(width, height)
+        gl.glVertex2i(x, y+height)
         gl.glTexCoord2i(0, 1)
-        gl.glVertex2i(x, height)
+        gl.glVertex2i(x, y)
+        gl.glTexCoord2i(1, 1)
+        gl.glVertex2i(x+width, y)
+        gl.glTexCoord2i(1, 0)
+        gl.glVertex2i(x+width, y+height)
         gl.glEnd()
 
     def _draw_impl(self):

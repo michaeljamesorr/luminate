@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-
 import pyglet
 from pyglet import gl
+# import numpy as np
+import cv2
 
 import widget
 # import sigfilter
@@ -20,7 +21,13 @@ class MainApp(pyglet.window.Window):
         # self.widgets.append(widget.NoiseWidget(self, 300, 300, 100, 100))
         # self.widgets.append(widget.NoiseWidget(self, 500, 500, 200, 100))
 
-        self.widgets.append(widget.TextureWidget(self, 50, 50, 200, 100))
+        # tex_data = np.zeros((height, width, 3))
+        # tex_data[::30, :, :] = 1
+        # tex_data[:, ::30, :] = 1
+
+        img = cv2.imread("data/DSC_0075.jpg")
+        tex_data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, tex_data_2d=tex_data))
 
         # self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
         #                                          # (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
@@ -73,7 +80,7 @@ class MainApp(pyglet.window.Window):
 
 
 def main():
-    window = MainApp(width=1280, height=720)
+    window = MainApp(width=720, height=720)
     pyglet.clock.schedule_interval(window.update, 0.001)
     pyglet.app.run()
 
