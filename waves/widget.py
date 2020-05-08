@@ -46,7 +46,6 @@ class TextureWidget(AbstractWidget):
 
     def _create_texture(self, tex_array_2d, shape=None):
 
-        print(tex_array_2d.dtype)
         if tex_array_2d.dtype == np.dtype('uint8'):
             tex_array_2d = tex_array_2d.astype(float)
             tex_array_2d = tex_array_2d/256
@@ -56,7 +55,6 @@ class TextureWidget(AbstractWidget):
         else:
             height, width = shape
 
-        print((width, height))
         tex_array_1d = np.ravel(tex_array_2d)
         if (width*height*3 != len(tex_array_1d)):
             raise ValueError("Shape does not match data!")
