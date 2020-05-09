@@ -6,7 +6,7 @@ from pyglet import gl
 import cv2
 
 import widget
-import sigfilter
+import cython.cyfilter as sigfilter
 
 
 class MainApp(pyglet.window.Window):
@@ -25,12 +25,11 @@ class MainApp(pyglet.window.Window):
         # tex_data[::30, :, :] = 1
         # tex_data[:, ::30, :] = 1
 
-        img = cv2.imread("data/DSC_2489.jpg")
+        img = cv2.imread("data/DSC_1331.jpg")
         tex_data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        tex_data = tex_data.astype(float)
-        tex_data = tex_data/256
+        tex_data = tex_data.astype(float)/255
+        tex_data = sigfilter.sobel_edge_detect(tex_data)
         tex_data = sigfilter.apply_filter(tex_data, sigfilter.GAUSS_BLUR_3)
-        tex_data = sigfilter.apply_filter(tex_data, sigfilter.EDGE_DETECT)
 
         self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, tex_data_2d=tex_data))
 
@@ -85,7 +84,7 @@ class MainApp(pyglet.window.Window):
 
 
 def main():
-    window = MainApp(width=720, height=720)
+    window = MainApp(width=1500, height=1000)
     pyglet.clock.schedule_interval(window.update, 0.001)
     pyglet.app.run()
 
