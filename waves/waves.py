@@ -2,11 +2,13 @@
 
 import pyglet
 from pyglet import gl
-# import numpy as np
-import cv2
+import numpy as np
+# import cv2
 
 import widget
 import cython.cyfilter as sigfilter
+
+import datasource as ds
 
 
 class MainApp(pyglet.window.Window):
@@ -25,13 +27,18 @@ class MainApp(pyglet.window.Window):
         # tex_data[::30, :, :] = 1
         # tex_data[:, ::30, :] = 1
 
-        img = cv2.imread("data/DSC_1331.jpg")
-        tex_data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        tex_data = tex_data.astype(float)/255
-        tex_data = sigfilter.sobel_edge_detect(tex_data)
-        tex_data = sigfilter.apply_filter(tex_data, sigfilter.GAUSS_BLUR_3)
+        # img = cv2.imread("data/DSC_1446.jpg")
+        # tex_data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # tex_data = tex_data.astype(float)/255
+        # tex_data = sigfilter.sobel_edge_detect(tex_data)
 
-        self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, tex_data_2d=tex_data))
+        tex_data = np.zeros((200, 200, 3))
+        tex_data[50, :, :] = (1.0, 0.0, 0.0)
+        tex_data[100, :, :] = (0.0, 0.0, 1.0)
+        tex_data[150, :, :] = (0.0, 1.0, 0.0)
+
+        self.widgets.append(widget.TextureWidget(self, 0, 0, width, height,
+                            data_source=ds.FilterDataSource(tex_data, sigfilter.FLOW)))
 
         # self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
         #                                          # (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
@@ -84,7 +91,7 @@ class MainApp(pyglet.window.Window):
 
 
 def main():
-    window = MainApp(width=1500, height=1000)
+    window = MainApp(width=800, height=800)
     pyglet.clock.schedule_interval(window.update, 0.001)
     pyglet.app.run()
 

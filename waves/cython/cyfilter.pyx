@@ -1,9 +1,6 @@
 
 #cython: language_level=3
 
-# distutils: extra_compile_args=-fopenmp
-# distutils: extra_link_args=-fopenmp
-
 import array
 import numpy as np
 
@@ -15,6 +12,8 @@ GAUSS_BLUR_3 = np.array((1, 2, 1, 2, 4, 2, 1, 2, 1)).reshape((3, 3))/16
 SIMPLE_EDGE_DETECT = np.array((-1, -1, -1, -1, 8, -1, -1, -1, -1)).reshape((3, 3)).astype(float)
 SOBEL_EDGE_X = np.array((1, 0, -1, 2, 0, -2, 1, 0, -1)).reshape((3, 3)).astype(float)
 SOBEL_EDGE_Y = np.array((1, 2, 1, 0, 0, 0, -1, -2, -1)).reshape((3, 3)).astype(float)
+
+FLOW = np.array((1, 2, 1, 2, 4, 2, 1, 2, 1)).reshape((3, 3))/12
 
 def sobel_edge_detect(double[:,:,:] tex_2d):
     G_x = apply_filter(tex_2d, SOBEL_EDGE_X)

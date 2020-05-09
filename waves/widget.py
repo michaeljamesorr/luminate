@@ -34,15 +34,23 @@ class AbstractWidget:
 
 class TextureWidget(AbstractWidget):
 
-    def __init__(self, window, x, y, width, height, tex_data_2d=None):
+    def __init__(self, window, x, y, width, height, data_source=None):
         super().__init__(window, x, y, width, height)
 
-        if tex_data_2d is None:
+        if data_source is None:
             tex_data_2d = np.zeros((width, height, 3))
             mid_grey = np.array((0.5, 0.5, 0.5))
             tex_data_2d[...] = mid_grey
+            data_source = ds.ConstantDataSource(tex_data_2d)
 
-        self._tex_id = self._create_texture(tex_data_2d)
+        self.data_source = data_source
+
+        self._tex_id = self._create_texture(self.data_source.get_data())
+
+    def update(self, dt):
+        self.data_source.update(dt)
+        if self.data_source.has_new_data:
+            self._tex_id = self._create_texture(self.data_source.get_data())
 
     def _create_texture(self, tex_array_2d, shape=None):
 
@@ -122,7 +130,8 @@ class LinePlotWidget(AbstractWidget):
 
     def update(self, dt):
         self._data_source.update(dt)
-        self._update_data()
+        if self._data_source.has_new_data:
+            self._update_data()
 
     def _update_data(self):
         data = self._data_source.get_data()
@@ -175,9 +184,9 @@ class HeatmapWidget(TextureWidget):
 
     def update(self, dt):
         self.data_source.update(dt)
-        data = self.data_source.get_data()
-        self._update_texture(data)
-        pass
+        if self.data_source.has_new_data:
+            data = self.data_source.get_data()
+            self._update_texture(data)
 
 
 def norm_data(data):
