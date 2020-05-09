@@ -59,12 +59,17 @@ class TextureWidget(AbstractWidget):
             tex_array_2d = tex_array_2d/256
 
         if shape is None:
-            height, width = tex_array_2d.shape[:2]
+            shape = tex_array_2d.shape
+
+        height, width, depth = shape
+
+        if depth == 1:
+            gl_format = gl.GL_LUMINANCE
         else:
-            height, width = shape
+            gl_format = gl.GL_RGB
 
         tex_array_1d = np.ravel(tex_array_2d)
-        if (width*height*3 != len(tex_array_1d)):
+        if (width*height*depth != len(tex_array_1d)):
             raise ValueError("Shape does not match data!")
         tex = (gl.GLfloat * len(tex_array_1d))(*tex_array_1d)
 
@@ -74,8 +79,8 @@ class TextureWidget(AbstractWidget):
         gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
-        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, width, height,
-                        0, gl.GL_RGB, gl.GL_FLOAT, tex)
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl_format, width, height,
+                        0, gl_format, gl.GL_FLOAT, tex)
 
         return tex_id
 

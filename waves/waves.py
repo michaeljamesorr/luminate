@@ -2,8 +2,8 @@
 
 import pyglet
 from pyglet import gl
-import numpy as np
-# import cv2
+# import numpy as np
+import cv2
 
 import widget
 import cython.cyfilter as sigfilter
@@ -23,22 +23,28 @@ class MainApp(pyglet.window.Window):
         # self.widgets.append(widget.NoiseWidget(self, 300, 300, 100, 100))
         # self.widgets.append(widget.NoiseWidget(self, 500, 500, 200, 100))
 
-        # tex_data = np.zeros((height, width, 3))
+        # tex_data = np.zeros((700, 600, 3))
         # tex_data[::30, :, :] = 1
         # tex_data[:, ::30, :] = 1
 
-        # img = cv2.imread("data/DSC_1446.jpg")
-        # tex_data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        # tex_data = tex_data.astype(float)/255
-        # tex_data = sigfilter.sobel_edge_detect(tex_data)
+        img = cv2.imread("data/DSC_0098.jpg")
+        tex_data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        tex_data = tex_data.astype(float)/255
 
-        tex_data = np.zeros((200, 200, 3))
-        tex_data[50, :, :] = (1.0, 0.0, 0.0)
-        tex_data[100, :, :] = (0.0, 0.0, 1.0)
-        tex_data[150, :, :] = (0.0, 1.0, 0.0)
+        tex_data = sigfilter.convert_grayscale(tex_data)
+        tex_data = sigfilter.nearest_neighbour_scale(tex_data, 360, 360)
+        tex_data = sigfilter.sobel_edge_detect(tex_data)
+
+        # self.widgets.append(widget.TextureWidget(self, 0, 0, width, height,
+        #                     data_source=ds.ConstantDataSource(tex_data)))
+
+        # tex_data = np.zeros((200, 200, 3))
+        # tex_data[50, :, :] = (1.0, 0.0, 0.0)
+        # tex_data[100, :, :] = (0.0, 0.0, 1.0)
+        # tex_data[150, :, :] = (0.0, 1.0, 0.0)
 
         self.widgets.append(widget.TextureWidget(self, 0, 0, width, height,
-                            data_source=ds.FilterDataSource(tex_data, sigfilter.FLOW)))
+                            data_source=ds.FilterDataSource(tex_data, sigfilter.FLOW, cutoff=0.25)))
 
         # self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
         #                                          # (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
@@ -91,7 +97,7 @@ class MainApp(pyglet.window.Window):
 
 
 def main():
-    window = MainApp(width=800, height=800)
+    window = MainApp(width=900, height=900)
     pyglet.clock.schedule_interval(window.update, 0.001)
     pyglet.app.run()
 
