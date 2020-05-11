@@ -10,6 +10,11 @@ from libc.math cimport floor
 DTYPE = np.float64
 
 GAUSS_BLUR_3 = np.array((1, 2, 1, 2, 4, 2, 1, 2, 1)).reshape((3, 3))/16
+GAUSS_BLUR_5 = np.array((1, 4, 6, 4, 1,
+                   4, 16, 24, 16, 4,
+                   6, 24, 36, 24, 6,
+                   4, 16, 24, 16, 4,
+                   1, 4, 6, 4, 1)).reshape((5,5))/256
 SIMPLE_EDGE_DETECT = np.array((-1, -1, -1, -1, 8, -1, -1, -1, -1)).reshape((3, 3)).astype(float)
 SOBEL_EDGE_X = np.array((1, 0, -1, 2, 0, -2, 1, 0, -1)).reshape((3, 3)).astype(float)
 SOBEL_EDGE_Y = np.array((1, 2, 1, 0, 0, 0, -1, -2, -1)).reshape((3, 3)).astype(float)
@@ -77,7 +82,59 @@ def convert_grayscale(double[:,:,::1] tex_2d):
 
     return result
 
-def twobit_posterize(double[:,:,::1] tex_2d, double threshold):
+def binary_erosion(long[:,:,::1] binary_tex_2d):
+    cdef Py_ssize_t tex_x_len = binary_tex_2d.shape[0]
+    cdef Py_ssize_t tex_y_len = binary_tex_2d.shape[1]
+
+    cdef long[:,:] struct_elem = np.ones((3, 3)).astype(int)
+
+    cdef Py_ssize_t se_i_radius = int((struct_elem.shape[0] - 1)/2)
+    cdef Py_ssize_t se_j_radius = int((struct_elem.shape[1] - 1)/2)
+
+    result = np.zeros((tex_x_len, tex_y_len, 1)).astype(int)
+    cdef long[:,:,:] result_view = result
+
+    cdef long acc = 0
+    cdef Py_ssize_t x, y, i, j
+
+    for x in range(tex_x_len):
+        for y in range(tex_y_len):
+            acc = 0
+            for i in range(-se_i_radius, se_i_radius+1):
+                for j in range(-se_j_radius, se_j_radius+1):
+                    if x + i >= 0 and x + i < tex_x_len and y + j >= 0 and y + j < tex_y_len:
+                     acc += binary_tex_2d[x+i, y+j, 0] - struct_elem[se_i_radius+i, se_j_radius+j]
+            if acc == 0:
+                result[x, y, 0] = 1
+    return result    
+
+def binary_dilation(long[:,:,::1] binary_tex_2d):
+    cdef Py_ssize_t tex_x_len = binary_tex_2d.shape[0]
+    cdef Py_ssize_t tex_y_len = binary_tex_2d.shape[1]
+
+    cdef long[:,:] struct_elem = np.ones((3, 3)).astype(int)
+
+    cdef Py_ssize_t se_i_radius = int((struct_elem.shape[0] - 1)/2)
+    cdef Py_ssize_t se_j_radius = int((struct_elem.shape[1] - 1)/2)
+
+    result = np.zeros((tex_x_len, tex_y_len, 1)).astype(int)
+    cdef long[:,:,:] result_view = result
+
+    cdef long acc = 0
+    cdef Py_ssize_t x, y, i, j
+
+    for x in range(tex_x_len):
+        for y in range(tex_y_len):
+            acc = 0
+            for i in range(-se_i_radius, se_i_radius+1):
+                for j in range(-se_j_radius, se_j_radius+1):
+                    if x + i >= 0 and x + i < tex_x_len and y + j >= 0 and y + j < tex_y_len:
+                     acc += binary_tex_2d[x+i, y+j, 0] - struct_elem[se_i_radius+i, se_j_radius+j]
+            if acc > -9:
+                result[x, y, 0] = 1
+    return result    
+
+def onebit_posterize(double[:,:,::1] tex_2d, double threshold):
     cdef Py_ssize_t tex_x_len = tex_2d.shape[0]
     cdef Py_ssize_t tex_y_len = tex_2d.shape[1]
 
@@ -86,12 +143,12 @@ def twobit_posterize(double[:,:,::1] tex_2d, double threshold):
 
     for x in range(tex_x_len):
         for y in range(tex_y_len):
-            if pixel_luminance(tex_2d[x, y, :]) > threshold:
+            if pixel_intensity(tex_2d[x, y, :]) > threshold:
                 result_view[x, y, 0] = 1.0
             else:
                 result_view[x, y, 0] = 0.0
 
-    return result
+    return result.astype(int)
 
 def convert_rgba(tex_2d, alpha):
     alphas = np.full((tex_2d.shape[0], tex_2d.shape[1], 1), alpha)
