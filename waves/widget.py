@@ -34,8 +34,10 @@ class AbstractWidget:
 
 class TextureWidget(AbstractWidget):
 
-    def __init__(self, window, x, y, width, height, data_source=None):
+    def __init__(self, window, x, y, width, height, alpha=1.0, data_source=None):
         super().__init__(window, x, y, width, height)
+
+        self._alpha = alpha
 
         if data_source is None:
             tex_data_2d = np.zeros((width, height, 3))
@@ -65,6 +67,8 @@ class TextureWidget(AbstractWidget):
 
         if depth == 1:
             gl_format = gl.GL_LUMINANCE
+        elif depth == 4:
+            gl_format = gl.RGBA
         else:
             gl_format = gl.GL_RGB
 
@@ -84,7 +88,8 @@ class TextureWidget(AbstractWidget):
 
         return tex_id
 
-    def _draw_texture(self, tex_id, x, y, width, height):
+    def _draw_texture(self, tex_id, x, y, width, height, alpha=1.0):
+        gl.glColor4f(1.0, 1.0, 1.0, alpha)
         gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
         gl.glBegin(gl.GL_QUADS)
         gl.glTexCoord2i(0, 0)
@@ -98,7 +103,7 @@ class TextureWidget(AbstractWidget):
         gl.glEnd()
 
     def _draw_impl(self):
-        self._draw_texture(self._tex_id, 0, 0, self.width, self.height)
+        self._draw_texture(self._tex_id, 0, 0, self.width, self.height, alpha=self._alpha)
 
 
 class NoiseWidget(AbstractWidget):
@@ -107,7 +112,7 @@ class NoiseWidget(AbstractWidget):
         points = utility.random_points(self._numPoints,
                                        self.width, self.height).tolist()
         self._points = np.ravel(points, order="F").tolist()
-        self._colours = utility.random_colours(self._numPoints).tolist()
+        self._colours = utility.random_colours(self._numPoints)
 
     def _draw_impl(self):
 

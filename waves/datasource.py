@@ -101,13 +101,16 @@ def floatToBits(f):
 
 class FilterDataSource(AbstractDataSource):
 
-    def __init__(self, tex_data_2d, kernel_2d, cutoff=1.0):
+    def __init__(self, tex_data_2d, kernel_2d, strength_mask=None, cutoff=1.0):
         self._tex_data = tex_data_2d
         self._kernel = kernel_2d
+        self._strength_mask = strength_mask
         self._cutoff = cutoff
 
     def _update_impl(self, dt):
-        self._tex_data = sigfilter.apply_filter(self._tex_data, self._kernel, self._cutoff)
+        self._tex_data = sigfilter.apply_filter(self._tex_data, self._kernel,
+                                                strength_mask=self._strength_mask,
+                                                CUTOFF=self._cutoff)
         return True
 
     def _get_data_impl(self):

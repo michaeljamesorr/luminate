@@ -2,7 +2,7 @@
 
 import pyglet
 from pyglet import gl
-# import numpy as np
+import numpy as np
 import cv2
 
 import widget
@@ -21,30 +21,39 @@ class MainApp(pyglet.window.Window):
         self.widgets = []
         # self.widgets.append(widget.NoiseWidget(self, 100, 100, 100, 100))
         # self.widgets.append(widget.NoiseWidget(self, 300, 300, 100, 100))
-        # self.widgets.append(widget.NoiseWidget(self, 500, 500, 200, 100))
 
         # tex_data = np.zeros((700, 600, 3))
         # tex_data[::30, :, :] = 1
         # tex_data[:, ::30, :] = 1
 
-        img = cv2.imread("data/DSC_0098.jpg")
+        img = cv2.imread("data/DSC_1331.jpg")
         tex_data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         tex_data = tex_data.astype(float)/255
 
-        tex_data = sigfilter.convert_grayscale(tex_data)
         tex_data = sigfilter.nearest_neighbour_scale(tex_data, 360, 360)
-        tex_data = sigfilter.sobel_edge_detect(tex_data)
+        tex_grey = sigfilter.convert_grayscale(tex_data)
+        tex_edges = sigfilter.sobel_edge_detect(tex_grey)
+        tex_edges *= 1/np.max(tex_edges)
+        # tex_mask = tex_grey + tex_edges
+        # tex_edges = 1 - tex_edges
 
+        # tex_data = np.zeros((360, 360, 3))
+        # tex_data[90, 180, :] = (1.0, 0.0, 0.0)
+        # tex_data[180, 180, :] = (0.0, 0.0, 1.0)
+        # tex_data[270, 180, :] = (0.0, 1.0, 0.0)
+
+        # self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=0.0,
+        #                     data_source=ds.FilterDataSource(tex_data, sigfilter.FLOW_3,
+        #                                                     strength_mask=tex_mask,
+        # #                                                     cutoff=1.0)))
         # self.widgets.append(widget.TextureWidget(self, 0, 0, width, height,
-        #                     data_source=ds.ConstantDataSource(tex_data)))
+        #                     data_source=ds.ConstantDataSource(tex_mask)))
+        self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=0.9,
+                            data_source=ds.ConstantDataSource(tex_data)))
+        self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=0,
+                            data_source=ds.ConstantDataSource(tex_grey)))
 
-        # tex_data = np.zeros((200, 200, 3))
-        # tex_data[50, :, :] = (1.0, 0.0, 0.0)
-        # tex_data[100, :, :] = (0.0, 0.0, 1.0)
-        # tex_data[150, :, :] = (0.0, 1.0, 0.0)
-
-        self.widgets.append(widget.TextureWidget(self, 0, 0, width, height,
-                            data_source=ds.FilterDataSource(tex_data, sigfilter.FLOW, cutoff=0.25)))
+        self.widgets.append(widget.NoiseWidget(self, 500, 500, 200, 100))
 
         # self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
         #                                          # (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
@@ -76,6 +85,11 @@ class MainApp(pyglet.window.Window):
             self.fps_display = pyglet.window.FPSDisplay(self)
 
         gl.glEnable(gl.GL_TEXTURE_2D)
+        gl.glDisable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glEnable(gl.GL_COLOR_MATERIAL)
+        gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE)
 
     def on_draw(self):
         self.clear()

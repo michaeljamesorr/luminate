@@ -14,7 +14,12 @@ SIMPLE_EDGE_DETECT = np.array((-1, -1, -1, -1, 8, -1, -1, -1, -1)).reshape((3, 3
 SOBEL_EDGE_X = np.array((1, 0, -1, 2, 0, -2, 1, 0, -1)).reshape((3, 3)).astype(float)
 SOBEL_EDGE_Y = np.array((1, 2, 1, 0, 0, 0, -1, -2, -1)).reshape((3, 3)).astype(float)
 
-FLOW = np.array((1, 2, 1, 2, 4, 2, 1, 2, 1)).reshape((3, 3))/12
+FLOW_3 = np.array((1, 2, 1, 2, 4, 2, 1, 2, 1)).reshape((3, 3))/14
+FLOW_5 = np.array((1, 4, 6, 4, 1,
+                   4, 16, 24, 16, 4,
+                   6, 24, 36, 24, 6,
+                   4, 16, 24, 16, 4,
+                   1, 4, 6, 4, 1)).reshape((5,5))/224
 
 def nearest_neighbour_scale(tex_2d, int width, int height):
     cdef double x_scale = tex_2d.shape[1] / width
@@ -53,6 +58,12 @@ cdef double pixel_luminance(double[:] rgb_pixel):
     else:
         return 0.2989 * rgb_pixel[0] + 0.5870* rgb_pixel[1] + 0.1140 * rgb_pixel[2]
 
+cdef double pixel_intensity(double[:] rgb_pixel):
+    if rgb_pixel.shape[0] == 1:
+        return rgb_pixel[0]
+    else:
+        return (rgb_pixel[0] + rgb_pixel[1] + rgb_pixel[2]) / 3
+
 def convert_grayscale(double[:,:,::1] tex_2d):
     cdef Py_ssize_t tex_x_len = tex_2d.shape[0]
     cdef Py_ssize_t tex_y_len = tex_2d.shape[1]
@@ -66,14 +77,24 @@ def convert_grayscale(double[:,:,::1] tex_2d):
 
     return result
 
+def convert_rgba(tex_2d, alpha):
+    alphas = np.full((tex_2d.shape[0], tex_2d.shape[1], 1), alpha)
+    result = np.copy(tex_2d)
+    np.append(result, alphas, axis=2)
+    return result
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def apply_filter(double[:,:,::1] tex_2d, double[:,::1] kernel_2d, double CUTOFF=1.0):
+def apply_filter(double[:,:,::1] tex_2d, double[:,::1] kernel_2d,
+                 double[:,:,::1] strength_mask=None, double CUTOFF=1.0):
 
     cdef Py_ssize_t tex_x_len = tex_2d.shape[0]
     cdef Py_ssize_t tex_y_len = tex_2d.shape[1]
     cdef Py_ssize_t tex_depth = tex_2d.shape[2]
+
+    if strength_mask is None:
+        strength_mask = np.zeros((tex_x_len, tex_y_len, 1))
+    assert(tex_2d.shape[0] == strength_mask.shape[0] and tex_2d.shape[1] == strength_mask.shape[1])
 
     cdef Py_ssize_t kern_i_radius = int((kernel_2d.shape[0] - 1)/2)
     cdef Py_ssize_t kern_j_radius = int((kernel_2d.shape[1] - 1)/2)
@@ -86,7 +107,7 @@ def apply_filter(double[:,:,::1] tex_2d, double[:,::1] kernel_2d, double CUTOFF=
 
     for x in range(tex_x_len):
         for y in range(tex_y_len):
-            if pixel_luminance(tex_2d[x, y, :]) < CUTOFF:
+            if pixel_intensity(tex_2d[x, y, :]) + strength_mask[x, y, 0] < CUTOFF:
                 acc[:] = 0
                 for i in range(-kern_i_radius, kern_i_radius+1):
                     for j in range(-kern_j_radius, kern_j_radius+1):
@@ -96,7 +117,6 @@ def apply_filter(double[:,:,::1] tex_2d, double[:,::1] kernel_2d, double CUTOFF=
                 result_view[x, y, :] = acc
             else:
                 result_view[x, y, :] = tex_2d[x, y, :]
-
     return result
 
 
