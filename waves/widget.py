@@ -32,6 +32,9 @@ class AbstractWidget:
         pass
 
 
+num_textures = 0
+
+
 class TextureWidget(AbstractWidget):
 
     def __init__(self, window, x, y, width, height, alpha=1.0, data_source=None):
@@ -47,14 +50,17 @@ class TextureWidget(AbstractWidget):
 
         self.data_source = data_source
 
-        self._tex_id = self._create_texture(self.data_source.get_data())
+        global num_textures
+        self._tex_id = num_textures
+        num_textures += 1
+        self._tex_gl_handle = self._create_texture(self.data_source.get_data(), self._tex_id)
 
     def update(self, dt):
         self.data_source.update(dt)
         if self.data_source.has_new_data:
-            self._tex_id = self._create_texture(self.data_source.get_data())
+            self._tex_gl_handle = self._create_texture(self.data_source.get_data(), self._tex_id)
 
-    def _create_texture(self, tex_array_2d, shape=None):
+    def _create_texture(self, tex_array_2d, tex_id, shape=None):
 
         if tex_array_2d.dtype == np.dtype('uint8'):
             tex_array_2d = tex_array_2d.astype(float)
@@ -77,20 +83,20 @@ class TextureWidget(AbstractWidget):
             raise ValueError("Shape does not match data!")
         tex = (gl.GLfloat * len(tex_array_1d))(*tex_array_1d)
 
-        tex_id = gl.GLuint()
+        tex_handle = gl.GLuint(tex_id)
 
-        gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, tex_handle)
         gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
         gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl_format, width, height,
                         0, gl_format, gl.GL_FLOAT, tex)
 
-        return tex_id
+        return tex_handle
 
-    def _draw_texture(self, tex_id, x, y, width, height, alpha=1.0):
+    def _draw_texture(self, tex_handle, x, y, width, height, alpha=1.0):
         gl.glColor4f(1.0, 1.0, 1.0, alpha)
-        gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, tex_handle)
         gl.glBegin(gl.GL_QUADS)
         gl.glTexCoord2i(0, 0)
         gl.glVertex2i(x, y+height)
@@ -103,7 +109,7 @@ class TextureWidget(AbstractWidget):
         gl.glEnd()
 
     def _draw_impl(self):
-        self._draw_texture(self._tex_id, 0, 0, self.width, self.height, alpha=self._alpha)
+        self._draw_texture(self._tex_gl_handle, 0, 0, self.width, self.height, alpha=self._alpha)
 
 
 class NoiseWidget(AbstractWidget):
@@ -190,7 +196,7 @@ class HeatmapWidget(TextureWidget):
         a = np.outer(self._minCol, (1 - dataVector))
         b = np.outer(self._maxCol, dataVector)
         tex_data_2d = np.ravel(a+b, order="F").reshape(shape[0], shape[1], 3)
-        self._tex_id = self._create_texture(tex_data_2d)
+        self._tex_gl_handle = self._create_texture(tex_data_2d)
 
     def update(self, dt):
         self.data_source.update(dt)

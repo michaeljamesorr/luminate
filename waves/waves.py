@@ -34,26 +34,20 @@ class MainApp(pyglet.window.Window):
         tex_grey = sigfilter.convert_grayscale(tex_data)
         tex_edges = sigfilter.sobel_edge_detect(tex_grey)
         tex_edges *= 1/np.max(tex_edges)
-        # tex_mask = tex_grey + tex_edges
+        tex_mask = tex_grey + tex_edges
         # tex_edges = 1 - tex_edges
 
-        # tex_data = np.zeros((360, 360, 3))
-        # tex_data[90, 180, :] = (1.0, 0.0, 0.0)
-        # tex_data[180, 180, :] = (0.0, 0.0, 1.0)
-        # tex_data[270, 180, :] = (0.0, 1.0, 0.0)
+        tex_data = np.zeros((360, 360, 3))
+        tex_data[90, 180, :] = (1.0, 0.0, 0.0)
+        tex_data[180, 180, :] = (0.0, 0.0, 1.0)
+        tex_data[270, 180, :] = (0.0, 1.0, 0.0)
 
-        # self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=0.0,
-        #                     data_source=ds.FilterDataSource(tex_data, sigfilter.FLOW_3,
-        #                                                     strength_mask=tex_mask,
-        # #                                                     cutoff=1.0)))
-        # self.widgets.append(widget.TextureWidget(self, 0, 0, width, height,
-        #                     data_source=ds.ConstantDataSource(tex_mask)))
         self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=0.9,
-                            data_source=ds.ConstantDataSource(tex_data)))
-        self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=0,
+                            data_source=ds.FilterDataSource(tex_data, sigfilter.FLOW_3,
+                                                            strength_mask=tex_mask,
+                                                            cutoff=1.0)))
+        self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=0.5,
                             data_source=ds.ConstantDataSource(tex_grey)))
-
-        self.widgets.append(widget.NoiseWidget(self, 500, 500, 200, 100))
 
         # self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
         #                                          # (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
