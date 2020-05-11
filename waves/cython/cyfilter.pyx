@@ -77,6 +77,22 @@ def convert_grayscale(double[:,:,::1] tex_2d):
 
     return result
 
+def twobit_posterize(double[:,:,::1] tex_2d, double threshold):
+    cdef Py_ssize_t tex_x_len = tex_2d.shape[0]
+    cdef Py_ssize_t tex_y_len = tex_2d.shape[1]
+
+    result = np.zeros((tex_x_len, tex_y_len, 1))
+    cdef double[:,:,:] result_view = result
+
+    for x in range(tex_x_len):
+        for y in range(tex_y_len):
+            if pixel_luminance(tex_2d[x, y, :]) > threshold:
+                result_view[x, y, 0] = 1.0
+            else:
+                result_view[x, y, 0] = 0.0
+
+    return result
+
 def convert_rgba(tex_2d, alpha):
     alphas = np.full((tex_2d.shape[0], tex_2d.shape[1], 1), alpha)
     result = np.copy(tex_2d)
