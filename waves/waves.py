@@ -35,19 +35,19 @@ class MainApp(pyglet.window.Window):
         tex_grey = sigfilter.convert_grayscale(tex_data)
         tex_scaled = sigfilter.nearest_neighbour_scale(tex_grey, 200, 200)
         tex_edges = sigfilter.sobel_edge_detect(tex_scaled)
-        tex_edges = tex_edges ** 0.2
-        tex_edges *= 1/np.max(tex_edges)
-        tex_edges = tex_edges ** 2
+        tex_edges = tex_edges ** 0.3
         tex_edges *= 1/np.max(tex_edges)
         # print(np.histogram(tex_edges, bins=256))
         tex_threshold = sigfilter.onebit_posterize(tex_edges, 0.65)
-        tex_threshold = sigfilter.binary_dilation(tex_threshold)
-        tex_threshold = sigfilter.binary_erosion(tex_threshold)
+        # tex_threshold = sigfilter.binary_thinning(tex_threshold)
+        # tex_threshold = sigfilter.binary_dilation(tex_threshold)
+        # tex_threshold = sigfilter.binary_erosion(tex_threshold)
         # tex_edges = sigfilter.apply_filter(tex_edges, sigfilter.GAUSS_BLUR_5)
         # tex_edges = sigfilter.apply_filter(tex_edges, sigfilter.GAUSS_BLUR_5)
         tex_mask = tex_threshold + tex_edges
+        tex_mask = np.clip(tex_mask, 0.0, 1.0)
         tex_mask = sigfilter.apply_filter(tex_mask, sigfilter.GAUSS_BLUR_5)
-        # tex_edges = 1 - tex_edges
+        tex_mask = 1 - tex_mask
 
         tex_data = np.zeros((200, 200, 3))
         tex_data[50, 100, :] = (1.0, 0.0, 0.0)
@@ -57,7 +57,7 @@ class MainApp(pyglet.window.Window):
         self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=1.0,
                             data_source=ds.FilterDataSource(tex_data, sigfilter.FLOW_3,
                                                             strength_mask=tex_mask,
-                                                            cutoff=1)))
+                                                            cutoff=1.0)))
         self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=0.7,
                             data_source=ds.ConstantDataSource(tex_mask)))
 

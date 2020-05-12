@@ -19,7 +19,7 @@ SIMPLE_EDGE_DETECT = np.array((-1, -1, -1, -1, 8, -1, -1, -1, -1)).reshape((3, 3
 SOBEL_EDGE_X = np.array((1, 0, -1, 2, 0, -2, 1, 0, -1)).reshape((3, 3)).astype(float)
 SOBEL_EDGE_Y = np.array((1, 2, 1, 0, 0, 0, -1, -2, -1)).reshape((3, 3)).astype(float)
 
-FLOW_3 = np.array((1, 2, 1, 2, 4, 2, 1, 2, 1)).reshape((3, 3))/14
+FLOW_3 = np.array((1, 2, 1, 2, 4, 2, 1, 2, 1)).reshape((3, 3))/6
 FLOW_5 = np.array((1, 4, 6, 4, 1,
                    4, 16, 24, 16, 4,
                    6, 24, 36, 24, 6,
@@ -82,6 +82,76 @@ def convert_grayscale(double[:,:,::1] tex_2d):
 
     return result
 
+cdef pixel_hit_and_miss(long[:,:,::1] binary_tex_2d, Py_ssize_t tex_x_len, Py_ssize_t tex_y_len,
+                        Py_ssize_t x, Py_ssize_t y,
+                        long[:,:] struct_elem, Py_ssize_t se_i_radius, Py_ssize_t se_j_radius):
+    
+    cdef Py_ssize_t i, j
+    cdef long current_ij
+
+    for i in range(-se_i_radius, se_i_radius+1):
+        for j in range(-se_j_radius, se_j_radius+1):
+            current_ij = struct_elem[se_i_radius+i, se_j_radius+j]
+            if current_ij != -1:
+                if x + i >= 0 and x + i < tex_x_len and y + j >= 0 and y + j < tex_y_len:
+                    if binary_tex_2d[x+i, y+j, 0] != current_ij:
+                        return 0
+                else:
+                    return 0
+    return 1
+
+
+def binary_hit_and_miss(long[:,:,::1] binary_tex_2d, long[:,:] struct_elem):
+    cdef Py_ssize_t tex_x_len = binary_tex_2d.shape[0]
+    cdef Py_ssize_t tex_y_len = binary_tex_2d.shape[1]
+
+    cdef Py_ssize_t se_i_radius = int((struct_elem.shape[0] - 1)/2)
+    cdef Py_ssize_t se_j_radius = int((struct_elem.shape[1] - 1)/2)
+
+    result = np.zeros((tex_x_len, tex_y_len, 1)).astype(int)
+    cdef long[:,:,:] result_view = result
+
+    cdef Py_ssize_t x, y
+
+    for x in range(tex_x_len):
+        for y in range(tex_y_len):
+            result[x, y, 0] = pixel_hit_and_miss(binary_tex_2d, tex_x_len, tex_y_len, x, y,
+                                                 struct_elem, se_i_radius, se_j_radius)
+    return result
+
+def binary_thinning(long[:,:,::1] binary_tex_2d):
+
+    cdef Py_ssize_t i
+
+    struct_elems = []
+    se1 = np.array((0, 0, 0, -1, 1, -1, 1, 1, 1,)).reshape((3,3)).astype(int)
+    se2 = np.array((-1, 0, 0, 1, 1, 0, -1, 1, -1,)).reshape((3,3)).astype(int)
+    struct_elems.append(se1)
+    struct_elems.append(se2)
+    for i in range(3):
+        se1 = np.rot90(se1)
+        se2 = np.rot90(se2)
+        struct_elems.append(se1)
+        struct_elems.append(se2)
+
+    result = np.copy(binary_tex_2d).astype(int)
+    cdef long[:,:,:] result_view
+
+    converged = False
+    
+    while not converged:
+        new_result = np.copy(result).astype(int)
+        result_view = new_result
+        for i in range(8):
+            new_result = new_result - binary_hit_and_miss(result_view, struct_elems[i])
+            new_result = np.clip(new_result, 0, 1)
+        if np.array_equal(result, new_result):
+            converged = True
+        result = new_result
+    return result
+        
+
+
 def binary_erosion(long[:,:,::1] binary_tex_2d):
     cdef Py_ssize_t tex_x_len = binary_tex_2d.shape[0]
     cdef Py_ssize_t tex_y_len = binary_tex_2d.shape[1]
@@ -129,10 +199,10 @@ def binary_dilation(long[:,:,::1] binary_tex_2d):
             for i in range(-se_i_radius, se_i_radius+1):
                 for j in range(-se_j_radius, se_j_radius+1):
                     if x + i >= 0 and x + i < tex_x_len and y + j >= 0 and y + j < tex_y_len:
-                     acc += binary_tex_2d[x+i, y+j, 0] - struct_elem[se_i_radius+i, se_j_radius+j]
-            if acc > -9:
+                     acc += binary_tex_2d[x+i, y+j, 0]*struct_elem[se_i_radius+i, se_j_radius+j]
+            if acc > 0:
                 result[x, y, 0] = 1
-    return result    
+    return result
 
 def onebit_posterize(double[:,:,::1] tex_2d, double threshold):
     cdef Py_ssize_t tex_x_len = tex_2d.shape[0]
@@ -166,7 +236,7 @@ def apply_filter(double[:,:,::1] tex_2d, double[:,::1] kernel_2d,
     cdef Py_ssize_t tex_depth = tex_2d.shape[2]
 
     if strength_mask is None:
-        strength_mask = np.zeros((tex_x_len, tex_y_len, 1))
+        strength_mask = np.ones((tex_x_len, tex_y_len, 1))
     assert(tex_2d.shape[0] == strength_mask.shape[0] and tex_2d.shape[1] == strength_mask.shape[1])
 
     cdef Py_ssize_t kern_i_radius = int((kernel_2d.shape[0] - 1)/2)
@@ -180,13 +250,13 @@ def apply_filter(double[:,:,::1] tex_2d, double[:,::1] kernel_2d,
 
     for x in range(tex_x_len):
         for y in range(tex_y_len):
-            if pixel_intensity(tex_2d[x, y, :]) + strength_mask[x, y, 0] < CUTOFF:
+            if pixel_intensity(tex_2d[x, y, :]) < CUTOFF:
                 acc[:] = 0
                 for i in range(-kern_i_radius, kern_i_radius+1):
                     for j in range(-kern_j_radius, kern_j_radius+1):
                         if x + i >= 0 and x + i < tex_x_len and y + j >= 0 and y + j < tex_y_len:
                             for k in range(len(acc)):
-                                acc[k] += tex_2d[x+i, y+j, k]*kernel_2d[kern_i_radius+i, kern_j_radius+j]
+                                acc[k] += tex_2d[x+i, y+j, k]*kernel_2d[kern_i_radius+i, kern_j_radius+j]*strength_mask[x+i, y+j, 0]
                 result_view[x, y, :] = acc
             else:
                 result_view[x, y, :] = tex_2d[x, y, :]
