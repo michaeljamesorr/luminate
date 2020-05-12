@@ -10,10 +10,12 @@ import cython.cyfilter as sigfilter
 
 import datasource as ds
 
+import utility
+
 
 class MainApp(pyglet.window.Window):
 
-    _displayFPS = True
+    _displayFPS = False
 
     def __init__(self, width, height):
         pyglet.window.Window.__init__(self, width=width, height=height)
@@ -33,7 +35,7 @@ class MainApp(pyglet.window.Window):
         tex_data = sigfilter.nearest_neighbour_scale(tex_data, 1080, 1080)
         # tex_data = sigfilter.apply_filter(tex_data, sigfilter.GAUSS_BLUR_3)
         tex_grey = sigfilter.convert_grayscale(tex_data)
-        tex_scaled = sigfilter.nearest_neighbour_scale(tex_grey, 200, 200)
+        tex_scaled = sigfilter.nearest_neighbour_scale(tex_grey, 300, 300)
         tex_edges = sigfilter.sobel_edge_detect(tex_scaled)
         tex_edges = tex_edges ** 0.3
         tex_edges *= 1/np.max(tex_edges)
@@ -49,17 +51,19 @@ class MainApp(pyglet.window.Window):
         tex_mask = sigfilter.apply_filter(tex_mask, sigfilter.GAUSS_BLUR_5)
         tex_mask = 1 - tex_mask
 
-        tex_data = np.zeros((200, 200, 3))
-        tex_data[50, 100, :] = (1.0, 0.0, 0.0)
-        tex_data[100, 100, :] = (0.0, 0.0, 1.0)
-        tex_data[150, 100, :] = (0.0, 1.0, 0.0)
+        tex_data = np.zeros((300, 300, 3))
+        points = np.ravel(utility.random_points(10, 300, 300), order="F").reshape(10, 2)
+        hues = np.random.uniform(size=10)
+
+        for i in range(10):
+            tex_data[points[i, 1], points[i, 0], :] = utility.hsv_to_rgb(hues[i], 0.5, 0.4)
 
         self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=1.0,
                             data_source=ds.FilterDataSource(tex_data, sigfilter.FLOW_3,
                                                             strength_mask=tex_mask,
-                                                            cutoff=1.0)))
-        self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=0.7,
-                            data_source=ds.ConstantDataSource(tex_mask)))
+                                                            cutoff=0.5)))
+        # self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=0.7,
+        #                     data_source=ds.ConstantDataSource(tex_mask)))
 
         # self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
         #                                          # (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
