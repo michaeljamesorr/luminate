@@ -34,3 +34,19 @@ def hsv_to_rgb(h, s, v):
         return (t, p, v)
     if i == 5:
         return (v, p, q)
+
+
+def split_complementary_color_palette(h, s, v):
+    palette = []
+    palette.append((h, s, v))
+    palette.append(((h + 0.45) % 1, s, v))
+    palette.append(((h + 0.55) % 1, s, v))
+    return palette
+
+
+def triadic_color_palette(h, s, v):
+    palette = []
+    for i in range(3):
+        h_i = (h + i/3) % 1
+        palette.append((h_i, s, v))
+    return palette

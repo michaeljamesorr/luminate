@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# import random
+
 import pyglet
 from pyglet import gl
 import numpy as np
@@ -7,9 +9,8 @@ import cv2
 
 import widget
 import cython.cyfilter as sigfilter
-
+import cython.cydraw as draw
 import datasource as ds
-
 import utility
 
 
@@ -28,15 +29,15 @@ class MainApp(pyglet.window.Window):
         # tex_data[::30, :, :] = 1
         # tex_data[:, ::30, :] = 1
 
-        img = cv2.imread("data/DSC_1331.jpg")
+        img = cv2.imread("data/DSC_2665.jpg")
         tex_data = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         tex_data = tex_data.astype(float)/255
 
-        tex_data = sigfilter.nearest_neighbour_scale(tex_data, 1080, 1080)
+        tex_scaled = sigfilter.nearest_neighbour_scale(tex_data, 432, 540)
+        # tex_data = sigfilter.nearest_neighbour_scale(tex_data, 1080, 1080)
         # tex_data = sigfilter.apply_filter(tex_data, sigfilter.GAUSS_BLUR_3)
-        tex_grey = sigfilter.convert_grayscale(tex_data)
-        tex_scaled = sigfilter.nearest_neighbour_scale(tex_grey, 300, 300)
-        tex_edges = sigfilter.sobel_edge_detect(tex_scaled)
+        tex_grey = sigfilter.convert_grayscale(tex_scaled)
+        tex_edges = sigfilter.sobel_edge_detect(tex_grey)
         tex_edges = tex_edges ** 0.3
         tex_edges *= 1/np.max(tex_edges)
         # print(np.histogram(tex_edges, bins=256))
@@ -51,19 +52,21 @@ class MainApp(pyglet.window.Window):
         tex_mask = sigfilter.apply_filter(tex_mask, sigfilter.GAUSS_BLUR_5)
         tex_mask = 1 - tex_mask
 
-        tex_data = np.zeros((300, 300, 3))
-        points = np.ravel(utility.random_points(10, 300, 300), order="F").reshape(10, 2)
-        hues = np.random.uniform(size=10)
+        tex_data = np.zeros((540, 432, 3))
 
-        for i in range(10):
-            tex_data[points[i, 1], points[i, 0], :] = utility.hsv_to_rgb(hues[i], 0.5, 0.4)
+        points = np.ravel(utility.random_points(20, 432, 540), order="F").reshape(20, 2)
+        palette = utility.split_complementary_color_palette(0.055, 0.7, 0.7)
+
+        for i in range(0, 20, 2):
+            draw.plot_line(tex_data, points[i, 0], points[i, 1], points[i+1, 0], points[i+1, 1],
+                           np.array(utility.hsv_to_rgb(*palette[i % 3])))
 
         self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=1.0,
                             data_source=ds.FilterDataSource(tex_data, sigfilter.FLOW_3,
                                                             strength_mask=tex_mask,
-                                                            cutoff=0.5)))
+                                                            cutoff=0.7)))
         # self.widgets.append(widget.TextureWidget(self, 0, 0, width, height, alpha=0.7,
-        #                     data_source=ds.ConstantDataSource(tex_mask)))
+        #                     data_source=ds.ConstantDataSource(tex_data)))
 
         # self.widgets.append(widget.HeatmapWidget(self, 100, 100, 1180, 620,
         #                                          # (0.0, 0.0, 0.8), (0.0, 0.8, 0.0),
@@ -121,7 +124,7 @@ class MainApp(pyglet.window.Window):
 
 
 def main():
-    window = MainApp(width=900, height=900)
+    window = MainApp(width=864, height=1080)
     pyglet.clock.schedule_interval(window.update, 0.001)
     pyglet.app.run()
 

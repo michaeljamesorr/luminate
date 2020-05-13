@@ -7,8 +7,6 @@ import numpy as np
 cimport cython
 from libc.math cimport floor
 
-DTYPE = np.float64
-
 GAUSS_BLUR_3 = np.array((1, 2, 1, 2, 4, 2, 1, 2, 1)).reshape((3, 3))/16
 GAUSS_BLUR_5 = np.array((1, 4, 6, 4, 1,
                    4, 16, 24, 16, 4,
@@ -226,6 +224,15 @@ def convert_rgba(tex_2d, alpha):
     np.append(result, alphas, axis=2)
     return result
 
+cdef clip_intensity(double[:] rgb_pixel, double max_intensity):
+    cdef double intensity = pixel_intensity(rgb_pixel)
+    cdef double ratio
+    cdef Py_ssize_t i
+    if intensity > max_intensity:
+        ratio = max_intensity / intensity
+        for i in range(rgb_pixel.shape[0]):
+            rgb_pixel[i] = rgb_pixel[i] * ratio
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def apply_filter(double[:,:,::1] tex_2d, double[:,::1] kernel_2d,
@@ -246,17 +253,20 @@ def apply_filter(double[:,:,::1] tex_2d, double[:,::1] kernel_2d,
     cdef double[:,:,:] result_view = result
 
     cdef double[:] acc = np.zeros((tex_depth))
+    cdef double intensity
     cdef Py_ssize_t x, y, i, j, k
 
     for x in range(tex_x_len):
         for y in range(tex_y_len):
-            if pixel_intensity(tex_2d[x, y, :]) < CUTOFF:
+            intensity = pixel_intensity(tex_2d[x, y, :])
+            if intensity < CUTOFF:
                 acc[:] = 0
                 for i in range(-kern_i_radius, kern_i_radius+1):
                     for j in range(-kern_j_radius, kern_j_radius+1):
                         if x + i >= 0 and x + i < tex_x_len and y + j >= 0 and y + j < tex_y_len:
                             for k in range(len(acc)):
                                 acc[k] += tex_2d[x+i, y+j, k]*kernel_2d[kern_i_radius+i, kern_j_radius+j]*strength_mask[x+i, y+j, 0]
+                clip_intensity(acc, CUTOFF)
                 result_view[x, y, :] = acc
             else:
                 result_view[x, y, :] = tex_2d[x, y, :]
