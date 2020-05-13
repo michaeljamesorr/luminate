@@ -4,7 +4,7 @@ import math
 import numpy as np
 import struct
 
-import cython.cyfilter as sigfilter
+from luminate import process
 
 
 class AbstractDataSource:
@@ -108,9 +108,9 @@ class FilterDataSource(AbstractDataSource):
         self._cutoff = cutoff
 
     def _update_impl(self, dt):
-        self._tex_data = sigfilter.apply_filter(self._tex_data, self._kernel,
-                                                strength_mask=self._strength_mask,
-                                                CUTOFF=self._cutoff)
+        self._tex_data = process.apply_filter(self._tex_data, self._kernel,
+                                              strength_mask=self._strength_mask,
+                                              CUTOFF=self._cutoff)
         return True
 
     def _get_data_impl(self):
@@ -122,7 +122,7 @@ class AudioDataSource(FunctionDataSource):
     def __init__(self, audio_signal, window_length):
         self._audio_signal = audio_signal
         raw_audio = audio_signal.get_array_of_samples()
-        # raw_audio = sigfilter.smooth(raw_audio, 22)
+        # raw_audio = process.smooth(raw_audio, 22)
         num_samples = len(raw_audio)
         super().__init__(lambda x, t: raw_audio[x + int(t*44000)] if 0 <= x + int(t*44000)
                          and x + int(t*44000) < num_samples else 0, ("x"),

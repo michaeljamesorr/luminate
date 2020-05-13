@@ -4,7 +4,7 @@ import pyglet
 from pyglet import gl
 
 
-class MainApp(pyglet.window.Window):
+class Window(pyglet.window.Window):
 
     _running = False
 
@@ -48,17 +48,3 @@ class MainApp(pyglet.window.Window):
             pyglet.clock.schedule_interval(self.update, 0.001)
             pyglet.app.run()
             self._running = True
-
-
-def main():
-    import utility
-    import widget
-    import datasource
-    window = MainApp(width=800, height=600)
-    test_tex = datasource.ConstantDataSource(utility.get_test_pattern())
-    window.widgets.append(widget.TextureWidget(window, 0, 0, 800, 600, data_source=test_tex))
-    window.run()
-
-
-if __name__ == '__main__':
-    main()

@@ -2,8 +2,8 @@ import pyglet
 from pyglet import gl
 import numpy as np
 
-import utility
-import datasource as ds
+from luminate import utility
+from luminate import datasource as ds
 
 
 class AbstractWidget:
