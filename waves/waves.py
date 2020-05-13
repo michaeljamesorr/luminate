@@ -6,6 +6,8 @@ from pyglet import gl
 
 class MainApp(pyglet.window.Window):
 
+    _running = False
+
     _display_fps = False
     widgets = []
 
@@ -41,11 +43,21 @@ class MainApp(pyglet.window.Window):
         for w in self.widgets:
             w.update(dt)
 
+    def run(self):
+        if not self._running:
+            pyglet.clock.schedule_interval(self.update, 0.001)
+            pyglet.app.run()
+            self._running = True
+
 
 def main():
-    window = MainApp(width=864, height=1080)
-    pyglet.clock.schedule_interval(window.update, 0.001)
-    pyglet.app.run()
+    import utility
+    import widget
+    import datasource
+    window = MainApp(width=800, height=600)
+    test_tex = datasource.ConstantDataSource(utility.get_test_pattern())
+    window.widgets.append(widget.TextureWidget(window, 0, 0, 800, 600, data_source=test_tex))
+    window.run()
 
 
 if __name__ == '__main__':

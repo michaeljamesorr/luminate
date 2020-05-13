@@ -1,6 +1,13 @@
 import numpy as np
 
 
+def get_test_pattern():
+    pattern = np.zeros((600, 800, 3))
+    for i in range(8):
+        pattern[:, i*100:(i+1)*100-1, :] = hsv_to_rgb((1/8)*i, 0.75, 0.75)
+    return pattern
+
+
 def random_points(count, x_max, y_max):
     x_points = np.random.randint(0, x_max, (count))
     y_points = np.random.randint(0, y_max, (count))
